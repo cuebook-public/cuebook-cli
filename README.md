@@ -1,34 +1,72 @@
-# Cuebook CLI
+<p align="center">
+  <a href="https://cuebook.xyz">
+    <img
+      src="https://raw.githubusercontent.com/cuebook-public/cuebook-cli/main/assets/cuebook-cli-logo.png"
+      width="200"
+      alt="Cuebook CLI"
+    />
+  </a>
+</p>
 
-[简体中文](README.zh-CN.md)
+<h1 align="center">Cuebook CLI — market intelligence for humans and AI agents</h1>
 
-The official command-line client for [Cuebook](https://cuebook.xyz). It gives
-people, scripts, and terminal-native AI agents a stable interface to Cuebook's
-remote MCP server.
+<p align="center">
+  The official command-line interface for Cuebook. Bring sourced Cues,
+  market context, catalysts, and safe paper-trading workflows into Codex,
+  Claude Code, OpenClaw, scripts, or any terminal.
+</p>
 
-```text
-person or AI agent
-        │
-        ▼
-   cuebook CLI
-        │  Streamable HTTP + OAuth 2.1
-        ▼
-https://cuebook.xyz/mcp
-```
+<p align="center">
+  <a href="https://github.com/cuebook-public/cuebook-cli/releases/latest">
+    <img alt="Latest release" src="https://img.shields.io/github/v/release/cuebook-public/cuebook-cli?style=flat-square&amp;color=F5C400" />
+  </a>
+  <a href="https://github.com/cuebook-public/cuebook-cli/actions/workflows/ci.yml">
+    <img alt="CI status" src="https://img.shields.io/github/actions/workflow/status/cuebook-public/cuebook-cli/ci.yml?branch=main&amp;style=flat-square&amp;label=CI" />
+  </a>
+  <img alt="Node.js 20 or newer" src="https://img.shields.io/badge/Node.js-%E2%89%A520-339933?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white" />
+  <img alt="MCP over Streamable HTTP" src="https://img.shields.io/badge/MCP-Streamable_HTTP-F5C400?style=flat-square" />
+  <a href="LICENSE">
+    <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-111111?style=flat-square" />
+  </a>
+</p>
 
-The CLI is a thin client. Market data, published Cuebook research,
-authorization, rate limits, and paper-trading rules remain on Cuebook's hosted
-service.
+<p align="center">
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#why-cuebook-cli">Why Cuebook CLI</a> ·
+  <a href="#commands">Commands</a> ·
+  <a href="#agent-workflows">Agent Workflows</a> ·
+  <a href="#write-safety">Write Safety</a> ·
+  <a href="#authentication">Authentication</a> ·
+  <a href="#troubleshooting">Troubleshooting</a>
+</p>
 
-## Status
+---
 
-`v0.1.1` is an early public preview. The source repository is ready to use;
-publishing the `@cuebook/cli` npm package is a separate release step and has
-not happened yet.
+## Overview
 
-## Install from source
+Every trade starts with a cue. `cuebook` (alias: `cbk`) makes Cuebook
+available wherever you already work: a terminal, a script, or an AI coding
+agent.
 
-Node.js 20 or newer is required.
+Use focused commands for everyday tasks, or discover and call the full Tool
+surface at runtime:
+
+- resolve assets and inspect market state;
+- read sourced Cues, themes, events, filings, and disclosures;
+- explore reasoning graphs, positioning, calendars, and prediction markets;
+- inspect a virtual portfolio and preview paper orders;
+- return deterministic JSON for agents and automation.
+
+No exchange API keys. No wallet credentials. No real-money execution.
+
+## Quick Start
+
+### Requirements
+
+- Node.js 20 or newer
+- A Cuebook account
+
+### Install
 
 ```bash
 git clone https://github.com/cuebook-public/cuebook-cli.git
@@ -38,105 +76,211 @@ npm run build
 npm link
 ```
 
-Then connect your Cuebook account:
+This installs both `cuebook` and the shorter `cbk` alias.
+
+### Connect your account
 
 ```bash
 cuebook auth login
 ```
 
-The CLI opens Cuebook in your browser. Signing in does not grant access until
-you approve the connection.
+Your browser opens Cuebook. Review the request and approve it to connect the
+CLI.
+
+### Make your first calls
+
+```bash
+cuebook tools list
+cuebook assets search bitcoin
+cuebook market state btc
+cuebook cues latest --asset btc
+```
+
+## Why Cuebook CLI
+
+| What an agent needs | How Cuebook CLI answers it |
+| --- | --- |
+| A surface it can learn at runtime | `cuebook tools list` returns the current Tool catalog |
+| Commands it can compose without guessing | Focused verbs cover assets, market state, Cues, diagnostics, and paper trading |
+| Output it can parse reliably | Global `--json` returns structured results and errors |
+| Secure account access | OAuth 2.1, PKCE, and explicit browser approval |
+| Safe behavior around new capabilities | Known reads run normally; writes and unknown Tools require `--confirm` |
+| Network resilience without duplicate actions | Transient reads can retry; write calls never retry automatically |
+
+The result is a small, self-describing command surface that works equally well
+for a person at the keyboard and an agent operating through a shell.
 
 ## Commands
 
+### Command reference
+
+| Command | Purpose |
+| --- | --- |
+| `cuebook auth login` | Connect the CLI to your Cuebook account |
+| `cuebook auth status` | Check the current connection |
+| `cuebook auth logout` | Remove local OAuth credentials |
+| `cuebook connections` | Manage connected Agents |
+| `cuebook tools list` | Discover available Tools |
+| `cuebook assets search <query>` | Find an asset and its canonical ticker |
+| `cuebook market state <tickers...>` | Read the latest market snapshot |
+| `cuebook cues latest` | Read the newest Cues |
+| `cuebook cues latest --asset <ticker>` | Read Cues for one asset |
+| `cuebook paper portfolio` | Inspect your virtual portfolio |
+| `cuebook paper preview <ticker> ...` | Preview a paper order |
+| `cuebook call <tool>` | Call any available Tool |
+| `cuebook doctor` | Diagnose authentication and connectivity |
+
+### Everyday examples
+
 ```bash
-# Authentication and connection management
-cuebook auth login
-cuebook auth status
-cuebook auth logout
-cuebook connections
-
-# Discover the live server surface
-cuebook tools list
-
-# Friendly read commands
+# Resolve an asset, then inspect its market state
 cuebook assets search bitcoin
 cuebook market state btc
+
+# Read current market narratives
 cuebook cues latest
-cuebook cues latest --asset btc
-cuebook paper portfolio
+cuebook cues latest --asset nvda --limit 5
+
+# Preview a simulated order — nothing is placed
 cuebook paper preview btc --side buy --notional-usd 100
 
-# Call any currently exposed MCP tool
+# Read historical candles
 cuebook call get_candles \
   --input '{"ticker":"btc","interval":"1d"}'
+
+# Read arguments from a JSON file
+cuebook call get_reasoning_graph --file request.json
 ```
 
-Use `--json` for deterministic agent and script output:
+### What you can explore
+
+| Area | Capabilities |
+| --- | --- |
+| Assets and market | Asset search, market snapshots, historical candles |
+| Cues and reasoning | Asset Cues, global timeline, themes, details, reasoning graphs |
+| Events and research | Events, market briefings, news clusters, search, filings, disclosures |
+| Positioning and catalysts | Positioning, market calendar, prediction markets, settlements |
+| Paper trading | Virtual portfolio, order preview, paper orders, position closing, order history |
+
+The available surface can evolve. `cuebook tools list` always shows the
+current Tool names, descriptions, inputs, and safety classification.
+
+## Agent Workflows
+
+Use the global `--json` flag whenever another program will consume the result:
 
 ```bash
 cuebook --json assets search NVDA
 cuebook --json cues latest --asset nvda
+cuebook --json market state btc | jq -r '.data.quotes[0].price'
 ```
 
-Arguments for `cuebook call` can also come from a file:
+### Output contract
 
-```bash
-cuebook call get_reasoning_graph --file request.json
+| Exit code | Meaning |
+| --- | --- |
+| `0` | Command completed successfully |
+| `1` | The command failed |
+| `2` | Authorization or explicit write confirmation is required |
+
+JSON errors use a stable envelope:
+
+```json
+{
+  "error": {
+    "message": "Cuebook authorization is required.",
+    "hint": "Run: cuebook auth login"
+  }
+}
 ```
 
-## Write safety
+### Generic Tool calls
 
-The CLI treats the live MCP tool list as the capability source of truth.
-Known read operations run normally. A write-capable or unknown tool is blocked
-unless the caller supplies `--confirm`:
+`cuebook call` is the escape hatch for capabilities that do not yet have a
+focused command:
 
 ```bash
+cuebook call <tool> --input '{"key":"value"}'
+cuebook call <tool> --file request.json
+```
+
+An agent can start with `cuebook tools list`, select a Tool, assemble its
+arguments, and call it without relying on a hard-coded catalog.
+
+## Write Safety
+
+Cuebook CLI fails closed around writes:
+
+1. Known read operations run normally.
+2. A write-capable or newly introduced Tool requires `--confirm`.
+3. Confirmed writes are sent once and never retried automatically.
+4. Paper-trading actions use virtual funds only.
+
+```bash
+# Blocked: explicit confirmation is missing
+cuebook call place_paper_order --file order.json
+
+# Sends one simulated paper order after review
 cuebook call place_paper_order --file order.json --confirm
 ```
 
-This confirmation is an additional client-side guard, not an authorization
-boundary. Cuebook's remote MCP server still validates OAuth scopes, account
-state, idempotency, limits, and tool-specific rules.
+Confirmation is an additional client-side guard. Cuebook still applies the
+permissions, limits, idempotency rules, and validation required for each Tool.
 
-Cuebook paper trading uses simulated portfolios and virtual funds. The CLI
-does not place real trades, transfer money, access exchange accounts, or ask
-for exchange or wallet credentials.
+Cuebook CLI cannot place real trades, transfer money, access an exchange
+account, or request exchange and wallet secrets.
 
-## OAuth and local credentials
+## Authentication
 
-- Authorization uses OAuth 2.1, PKCE, and a loopback callback.
-- Dynamic client registration identifies the connection as `Cuebook CLI`.
+`cuebook auth login` uses OAuth 2.1 with PKCE and opens Cuebook in your
+browser. Access is granted only after you approve the connection.
+
 - Credentials are stored in an owner-only local file (`0600` on Unix-like
   systems).
-- Override the directory with `CUEBOOK_CONFIG_DIR`.
-- For managed automation, supply a short-lived bearer token through
-  `CUEBOOK_ACCESS_TOKEN`; it is never written to disk by the CLI.
+- Set `CUEBOOK_CONFIG_DIR` to choose a different credential directory.
+- Set `CUEBOOK_ACCESS_TOKEN` for externally managed automation; the CLI never
+  writes that value to disk.
+- Each authorized CLI uses one Agent connection.
+- A Cuebook account can keep up to three active Agent connections.
 
-The CLI counts as one connected Agent in Cuebook. `cuebook auth logout`
-removes local tokens. To remove the Cuebook-side connection and release its
-Agent slot, run `cuebook connections` and disconnect it in Cuebook.
+### Disconnect and release a slot
+
+```bash
+cuebook connections
+```
+
+Choose **Disconnect** next to the connection you no longer use. Local logout
+removes credentials from the current machine; disconnecting in Cuebook also
+releases the Agent slot.
 
 ## Configuration
 
 | Variable | Purpose |
 | --- | --- |
-| `CUEBOOK_MCP_URL` | Override the remote MCP endpoint |
-| `CUEBOOK_ACCESS_TOKEN` | Use an externally managed bearer token |
-| `CUEBOOK_CONFIG_DIR` | Override the local credential directory |
+| `CUEBOOK_MCP_URL` | Use a different MCP endpoint |
+| `CUEBOOK_ACCESS_TOKEN` | Use an externally managed Bearer Token |
+| `CUEBOOK_CONFIG_DIR` | Choose the local credential directory |
 | `CUEBOOK_DEBUG=1` | Print stack traces for CLI errors |
 
 The default endpoint is `https://cuebook.xyz/mcp`.
 
-## Diagnostics
+## Troubleshooting
+
+Start with:
 
 ```bash
 cuebook doctor
 ```
 
-`doctor` checks protected-resource discovery, authorization-server metadata,
-local credentials, and an authenticated MCP handshake. It never prints OAuth
-tokens.
+| Symptom | Resolution |
+| --- | --- |
+| `Cuebook authorization is required` | Run `cuebook auth login` and approve the request |
+| Connection limit reached | Run `cuebook connections` and disconnect an unused Agent |
+| OAuth callback port is busy | Run `cuebook auth login --callback-port 53683` |
+| Persistent `fetch failed` | Check TLS, proxy, VPN, and network access, then run `cuebook doctor` |
+| Local logout did not free a slot | Disconnect the connection from `cuebook connections` |
+
+`cuebook doctor` never prints OAuth tokens.
 
 ## Development
 
@@ -145,17 +289,17 @@ npm ci
 npm run check
 ```
 
-The quality gate runs formatting/lint checks, TypeScript checks, tests, the
-production build, and an npm package dry run. CI covers Node.js 20, 22, and 24.
+The quality gate runs Biome, TypeScript checks, automated tests, a production
+build, a CLI smoke test, and an npm package dry run. CI covers Node.js 20, 22,
+and 24.
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request and
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request and
 [SECURITY.md](SECURITY.md) before reporting a vulnerability.
 
-## License and service terms
+## License and Disclaimer
 
-The CLI source is available under the [MIT License](LICENSE). Use of Cuebook's
-hosted service and data remains subject to Cuebook's applicable product terms
-and data rights.
+Cuebook CLI is available under the [MIT License](LICENSE).
 
-Cuebook provides market information and simulated tools, not investment
-advice. Nothing returned by this CLI is a recommendation to trade.
+Cuebook provides market information, structured reasoning, and simulated
+tools. It does not provide investment advice. A Cue is not a recommendation
+to trade, and every decision remains yours.

@@ -1,7 +1,7 @@
 {
   "name": "@cuebook/cli",
   "version": "0.1.1",
-  "description": "Official command-line client for Cuebook's remote MCP server.",
+  "description": "Official Cuebook CLI for market intelligence, sourced Cues, and safe paper-trading workflows.",
   "type": "module",
   "bin": {
     "cuebook": "./dist/cli.js",
@@ -10,7 +10,6 @@
   "files": [
     "dist",
     "README.md",
-    "README.zh-CN.md",
     "CHANGELOG.md",
     "LICENSE"
   ],
