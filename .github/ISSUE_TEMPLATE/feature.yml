@@ -1,0 +1,17 @@
+name: Feature request
+description: Propose a focused CLI workflow
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: job
+    attributes:
+      label: User job
+      description: What should a person or agent be able to accomplish?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed interface
+      description: Include example commands or output when useful.
