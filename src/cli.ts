@@ -16,11 +16,16 @@ import { CliError } from "./errors.js"
 import { paperAmount, parseCallbackPort, parseJsonInput, parsePositiveInteger } from "./input.js"
 import { connectMcp, type McpConnection } from "./mcp-client.js"
 import { extractToolPayload, printJson, printToolPayload, renderToolList } from "./output.js"
-import { assertToolCallAllowed } from "./safety.js"
+import { isTransientNetworkError, withTransientRetry } from "./retry.js"
+import { assertToolCallAllowed, toolRisk } from "./safety.js"
 
 interface GlobalOptions {
   server: string
   json: boolean
+}
+
+interface ConnectionRunOptions {
+  connectAttempts?: number
 }
 
 function globalOptions(command: Command): GlobalOptions {
@@ -31,9 +36,14 @@ function globalOptions(command: Command): GlobalOptions {
 async function withConnection<T>(
   command: Command,
   operation: (connection: McpConnection, globals: GlobalOptions) => Promise<T>,
+  options: ConnectionRunOptions = {},
 ): Promise<T> {
   const globals = globalOptions(command)
-  const connection = await connectMcp({ serverUrl: globals.server, store: new ConfigStore() })
+  const connection = await connectMcp({
+    serverUrl: globals.server,
+    store: new ConfigStore(),
+    connectAttempts: options.connectAttempts,
+  })
   try {
     return await operation(connection, globals)
   } finally {
@@ -41,12 +51,19 @@ async function withConnection<T>(
   }
 }
 
+async function withReadConnection<T>(
+  command: Command,
+  operation: (connection: McpConnection, globals: GlobalOptions) => Promise<T>,
+): Promise<T> {
+  return withTransientRetry(() => withConnection(command, operation, { connectAttempts: 1 }))
+}
+
 async function invokeReadTool(
   command: Command,
   name: string,
   args: Record<string, unknown>,
 ): Promise<void> {
-  await withConnection(command, async (connection, globals) => {
+  await withReadConnection(command, async (connection, globals) => {
     const result = await connection.client.callTool({ name, arguments: args })
     printToolPayload(extractToolPayload(result), globals.json)
   })
@@ -58,14 +75,29 @@ async function invokeDiscoveredTool(
   args: Record<string, unknown>,
   confirmed: boolean,
 ): Promise<void> {
-  await withConnection(command, async (connection, globals) => {
-    const listing = await connection.client.listTools()
-    const tool = listing.tools.find((candidate) => candidate.name === name)
-    if (!tool) throw new CliError(`Cuebook does not currently expose a tool named "${name}"`)
-    assertToolCallAllowed(name, confirmed, tool.annotations)
-    const result = await connection.client.callTool({ name, arguments: args })
-    printToolPayload(extractToolPayload(result), globals.json)
-  })
+  let operationMayRetry = true
+  await withTransientRetry(
+    async () => {
+      operationMayRetry = true
+      await withConnection(
+        command,
+        async (connection, globals) => {
+          const listing = await connection.client.listTools()
+          const tool = listing.tools.find((candidate) => candidate.name === name)
+          if (!tool) throw new CliError(`Cuebook does not currently expose a tool named "${name}"`)
+          const risk = toolRisk(name, tool.annotations)
+          assertToolCallAllowed(name, confirmed, tool.annotations)
+          operationMayRetry = risk === "read"
+          const result = await connection.client.callTool({ name, arguments: args })
+          printToolPayload(extractToolPayload(result), globals.json)
+        },
+        { connectAttempts: 1 },
+      )
+    },
+    {
+      shouldRetry: (error) => operationMayRetry && isTransientNetworkError(error),
+    },
+  )
 }
 
 function writeHuman(lines: string[]): void {
@@ -203,7 +235,7 @@ tools
   .command("list")
   .description("List tools from the connected Cuebook MCP server")
   .action(async (_options: unknown, command: Command) => {
-    await withConnection(command, async (connection, globals) => {
+    await withReadConnection(command, async (connection, globals) => {
       const listing = await connection.client.listTools()
       if (globals.json) printJson(listing.tools)
       else writeHuman([renderToolList(listing.tools)])

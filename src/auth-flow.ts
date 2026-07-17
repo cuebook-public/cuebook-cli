@@ -8,6 +8,7 @@ import { connectionsUrl } from "./constants.js"
 import { AuthRequiredError, CliError } from "./errors.js"
 import { connectMcp, createMcpSession } from "./mcp-client.js"
 import { startOAuthCallbackServer } from "./oauth-callback.js"
+import { withTransientRetry } from "./retry.js"
 
 export interface LoginOptions {
   serverUrl: string
@@ -23,12 +24,19 @@ export interface LoginResult {
 }
 
 async function verifyConnection(serverUrl: string, store: ConfigStore): Promise<number> {
-  const connection = await connectMcp({ serverUrl, store, useEnvironmentToken: false })
-  try {
-    return (await connection.client.listTools()).tools.length
-  } finally {
-    await connection.close()
-  }
+  return withTransientRetry(async () => {
+    const connection = await connectMcp({
+      serverUrl,
+      store,
+      useEnvironmentToken: false,
+      connectAttempts: 1,
+    })
+    try {
+      return (await connection.client.listTools()).tools.length
+    } finally {
+      await connection.close()
+    }
+  })
 }
 
 export async function login(options: LoginOptions): Promise<LoginResult> {
@@ -132,13 +140,15 @@ export async function authStatus(
   }
 
   try {
-    const connection = await connectMcp({ serverUrl, store })
-    try {
-      const toolCount = (await connection.client.listTools()).tools.length
-      return { localCredentials, connected: true, toolCount, ...(source ? { source } : {}) }
-    } finally {
-      await connection.close()
-    }
+    const toolCount = await withTransientRetry(async () => {
+      const connection = await connectMcp({ serverUrl, store, connectAttempts: 1 })
+      try {
+        return (await connection.client.listTools()).tools.length
+      } finally {
+        await connection.close()
+      }
+    })
+    return { localCredentials, connected: true, toolCount, ...(source ? { source } : {}) }
   } catch (error) {
     return {
       localCredentials,

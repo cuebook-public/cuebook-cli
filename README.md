@@ -22,7 +22,7 @@ service.
 
 ## Status
 
-`v0.1.0` is an early public preview. The source repository is ready to use;
+`v0.1.1` is an early public preview. The source repository is ready to use;
 publishing the `@cuebook/cli` npm package is a separate release step and has
 not happened yet.
 

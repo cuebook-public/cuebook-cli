@@ -5,6 +5,7 @@ import type { ConfigStore } from "./config-store.js"
 import { DEFAULT_CALLBACK_PORT, VERSION } from "./constants.js"
 import { AuthRequiredError } from "./errors.js"
 import { CuebookOAuthProvider } from "./oauth-provider.js"
+import { withTransientRetry } from "./retry.js"
 
 export interface McpSession {
   client: Client
@@ -22,6 +23,7 @@ interface SessionOptions {
   redirectUrl?: string
   onRedirect?: (url: URL) => void | Promise<void>
   useEnvironmentToken?: boolean
+  connectAttempts?: number
 }
 
 export function createMcpSession(options: SessionOptions): McpSession {
@@ -52,18 +54,23 @@ export function createMcpSession(options: SessionOptions): McpSession {
 }
 
 export async function connectMcp(options: SessionOptions): Promise<McpConnection> {
-  const session = createMcpSession(options)
-  try {
-    await session.client.connect(session.transport)
-  } catch (error) {
-    await session.transport.close().catch(() => {})
-    if (error instanceof UnauthorizedError) throw new AuthRequiredError()
-    throw error
-  }
-  return {
-    ...session,
-    close: async () => {
-      await session.client.close()
+  return withTransientRetry(
+    async () => {
+      const session = createMcpSession(options)
+      try {
+        await session.client.connect(session.transport)
+      } catch (error) {
+        await session.transport.close().catch(() => {})
+        if (error instanceof UnauthorizedError) throw new AuthRequiredError()
+        throw error
+      }
+      return {
+        ...session,
+        close: async () => {
+          await session.client.close().catch(() => {})
+        },
+      }
     },
-  }
+    { attempts: options.connectAttempts },
+  )
 }

@@ -10,7 +10,9 @@ describe("tool safety", () => {
   it("fails closed for known writes and future unknown tools", () => {
     expect(toolRisk("place_paper_order")).toBe("confirmation-required")
     expect(toolRisk("future_tool")).toBe("confirmation-required")
-    expect(() => assertToolCallAllowed("place_paper_order", false)).toThrow(/--confirm/)
+    expect(() => assertToolCallAllowed("place_paper_order", false)).toThrow(
+      expect.objectContaining({ message: expect.stringMatching(/--confirm/), exitCode: 2 }),
+    )
     expect(() => assertToolCallAllowed("future_tool", false)).toThrow(/--confirm/)
   })
 

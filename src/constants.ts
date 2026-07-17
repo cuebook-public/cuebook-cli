@@ -1,4 +1,4 @@
-export const VERSION = "0.1.0"
+export const VERSION = "0.1.1"
 export const DEFAULT_MCP_URL = "https://cuebook.xyz/mcp"
 export const DEFAULT_CALLBACK_PORT = 53_682
 export const CLIENT_NAME = "Cuebook CLI"

@@ -45,5 +45,6 @@ export function assertToolCallAllowed(
   if (toolRisk(name, annotations) === "read" || confirmed) return
   throw new CliError(
     `Tool "${name}" is write-capable or unknown. Review the exact input and rerun with --confirm.`,
+    2,
   )
 }
