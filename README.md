@@ -31,13 +31,15 @@
 </p>
 
 <p align="center">
+  <a href="#cuebook-surfaces">Surfaces</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="#why-cuebook-cli">Why Cuebook CLI</a> ·
   <a href="#commands">Commands</a> ·
   <a href="#agent-workflows">Agent Workflows</a> ·
   <a href="#write-safety">Write Safety</a> ·
   <a href="#authentication">Authentication</a> ·
-  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#troubleshooting">Troubleshooting</a> ·
+  <a href="https://github.com/cuebook-public/cuebook-skills">Skills</a>
 </p>
 
 ---
@@ -58,6 +60,15 @@ surface at runtime:
 - return deterministic JSON for agents and automation.
 
 No exchange API keys. No wallet credentials. No real-money execution.
+
+## Cuebook Surfaces
+
+| Surface | Best for | Current contract |
+| --- | --- | --- |
+| **[Cuebook CLI](https://github.com/cuebook-public/cuebook-cli)** | Terminal use, scripts, automation, and direct Tool inspection | Live Tool discovery, structured JSON, OAuth connection management, and fail-closed write confirmation |
+| **[Cuebook Skills](https://github.com/cuebook-public/cuebook-skills)** | Natural-language research and guided Frame creation in Codex | Two public entrypoints; internal research, rendering, and publication modules load on demand |
+
+Both surfaces connect to Cuebook MCP. The server remains authoritative for the Tools and scopes available to each connection. Use the CLI when you want explicit commands and machine-readable output; use Skills when you want Cuebook to interview, research, compose, and visually express an idea.
 
 ## Quick Start
 
@@ -162,8 +173,9 @@ cuebook call get_reasoning_graph --file request.json
 | Positioning and catalysts | Positioning, market calendar, prediction markets, settlements |
 | Paper trading | Virtual portfolio, order preview, paper orders, position closing, order history |
 
-The available surface can evolve. `cuebook tools list` always shows the
-current Tool names, descriptions, inputs, and safety classification.
+The available surface can evolve. `cuebook tools list` shows the current Tool
+names, descriptions, inputs, and safety classification granted to that
+connection. The README does not promise a Tool that the server has not exposed.
 
 ## Agent Workflows
 
